@@ -2146,6 +2146,12 @@ action_location_properties_callback (GtkAction *action,
 	nautilus_file_list_free (files);
 }
 
+static void
+action_encrypt_callback (GtkAction *action,
+			 gpointer callback_data)
+{
+}
+
 static gboolean
 all_files_in_trash (GList *files)
 {
@@ -7121,6 +7127,10 @@ static const GtkActionEntry directory_view_entries[] = {
   /* label, accelerator */       N_("P_roperties"), "<alt>Return",
   /* tooltip */                  N_("View or modify the properties of each selected item"),
 				 G_CALLBACK (action_properties_callback) },
+  /* name, stock id */         { NAUTILUS_ACTION_ENCRYPT, GTK_STOCK_PROPERTIES,  // TODO: Change image
+  /* label, accelerator */       N_("_Encrypt Folder"), "<control><shift>E",
+  /* tooltip */                  N_("Encrypt this folder"),
+				 G_CALLBACK (action_encrypt_callback) },
   /* name, stock id */         { "PropertiesAccel", NULL,
   /* label, accelerator */       "PropertiesAccel", "<control>I",
   /* tooltip */                  NULL,
@@ -8423,6 +8433,7 @@ real_update_menus (NautilusView *view)
 	GAppInfo *app;
 	GIcon *app_icon;
 	GtkWidget *menuitem;
+	gboolean show_encrypt;
 	gboolean show_properties;
 
 	selection = nautilus_view_get_selection (view);
@@ -8671,6 +8682,15 @@ real_update_menus (NautilusView *view)
 			      	"Ma_ke Links",
 				selection_count),
 		      NULL);
+
+	show_encrypt = selection != NULL && selection_count == 1
+		&& nautilus_file_is_directory( NAUTILUS_FILE (g_list_first (selection->data)));
+
+	action = gtk_action_group_get_action (view->details->dir_action_group,
+					      NAUTILUS_ACTION_ENCRYPT);
+	gtk_action_set_sensitive (action, show_encrypt);
+	gtk_action_set_visible (action, show_encrypt);
+
 
 	show_properties = !showing_network_directory (view)
 		&& (!NAUTILUS_IS_DESKTOP_CANVAS_VIEW (view) || selection_count > 0);

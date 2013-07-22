@@ -67,6 +67,7 @@
 #define NAUTILUS_ACTION_NEW_FOLDER_WITH_SELECTION "New Folder with Selection"
 #define NAUTILUS_ACTION_PROPERTIES "Properties"
 #define NAUTILUS_ACTION_PROPERTIES_ACCEL "PropertiesAccel"
+#define NAUTILUS_ACTION_ENCRYPT "Encrypt Folder"
 #define NAUTILUS_ACTION_LOCATION_PROPERTIES "LocationProperties"
 #define NAUTILUS_ACTION_EMPTY_TRASH "Empty Trash"
 #define NAUTILUS_ACTION_SAVE_SEARCH "Save Search"
