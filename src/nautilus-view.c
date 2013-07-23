@@ -2147,9 +2147,45 @@ action_location_properties_callback (GtkAction *action,
 }
 
 static void
+process_encrypt_folder (GtkDialog *dialog,
+			gint response,
+			NautilusFile *folder)
+{
+	if (response == GTK_RESPONSE_OK) {
+	}
+}
+
+static void
 action_encrypt_callback (GtkAction *action,
 			 gpointer callback_data)
 {
+	NautilusView *view;
+	GList *selection;
+	NautilusFile *folder;
+	GtkWidget *dialog;
+	GtkWindow *window;
+
+	g_assert (NAUTILUS_IS_VIEW (callback_data));
+	view = NAUTILUS_VIEW (callback_data);
+	selection = nautilus_view_get_selection (view);
+
+	folder = NAUTILUS_FILE (g_list_first (selection->data));
+	g_assert (nautilus_file_get_file_type (folder) == G_FILE_TYPE_DIRECTORY);
+
+	window = GTK_WINDOW (gtk_widget_get_toplevel (GTK_WIDGET (view)));
+	dialog = gtk_message_dialog_new (window,
+					 GTK_DIALOG_DESTROY_WITH_PARENT,
+					 GTK_MESSAGE_WARNING,
+					 GTK_BUTTONS_CANCEL,
+					 "This will encrypt the folder with a random password\n"
+					 " stored in your keyring. Failing to backup your\n"
+					 " keyring may result in losing these files.");
+	gtk_dialog_add_button(GTK_DIALOG (dialog), "Encrypt", GTK_RESPONSE_OK);
+
+	g_signal_connect(dialog, "response", G_CALLBACK (process_encrypt_folder), folder);
+
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
 }
 
 static gboolean
