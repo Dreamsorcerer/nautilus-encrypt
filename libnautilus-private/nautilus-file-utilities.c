@@ -1064,6 +1064,22 @@ nautilus_is_file_roller_installed (void)
 	return installed > 0 ? TRUE : FALSE;
 }
 
+gboolean
+nautilus_is_encfs_installed (void)
+{
+	static int installed = - 1;
+
+	if (installed < 0) {
+		if (have_program_in_path ("encfs")) {
+			installed = 1;
+		} else {
+			installed = 0;
+		}
+	}
+
+	return installed > 0 ? TRUE : FALSE;
+}
+
 /* Returns TRUE if the file is in XDG_DATA_DIRS. This is used for
    deciding if a desktop file is "trusted" based on the path */
 gboolean

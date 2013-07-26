@@ -60,6 +60,7 @@ char *   nautilus_get_searches_directory             (void);
 char *	 nautilus_compute_title_for_location	     (GFile *file);
 
 gboolean nautilus_is_file_roller_installed           (void);
+gboolean nautilus_is_encfs_installed				 (void);
 
 GIcon *  nautilus_special_directory_get_icon         (GUserDirectory directory);
 GIcon *  nautilus_special_directory_get_symbolic_icon (GUserDirectory directory);

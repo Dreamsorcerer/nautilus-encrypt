@@ -8720,7 +8720,8 @@ real_update_menus (NautilusView *view)
 		      NULL);
 
 	show_encrypt = selection != NULL && selection_count == 1
-		&& nautilus_file_is_directory( NAUTILUS_FILE (g_list_first (selection->data)));
+		&& nautilus_is_encfs_installed ()
+		&& nautilus_file_is_directory ( NAUTILUS_FILE (g_list_first (selection->data)));
 
 	action = gtk_action_group_get_action (view->details->dir_action_group,
 					      NAUTILUS_ACTION_ENCRYPT);
