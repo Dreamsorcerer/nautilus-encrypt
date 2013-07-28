@@ -2186,6 +2186,9 @@ action_encrypt_callback (GtkAction *action,
 
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
+
+    nautilus_file_list_free (selection);
+    nautilus_file_unref (folder);
 }
 
 static gboolean
