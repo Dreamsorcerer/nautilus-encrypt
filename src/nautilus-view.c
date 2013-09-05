@@ -2147,11 +2147,106 @@ action_location_properties_callback (GtkAction *action,
 }
 
 static void
+recursively_move_dir (GFile *src_dir, GFile *dest_dir)
+{
+    GFileEnumerator *children;
+    GFile *src_child, *dest_child;
+    GFileInfo *info;
+    GError *error = NULL;
+    GFileType type;
+
+    children = g_file_enumerate_children (src_dir,
+                                          "standard::name,standard::type",
+                                          G_FILE_QUERY_INFO_NONE, NULL, NULL);
+    if (children == NULL) {
+        // error
+    }
+
+    if (!g_file_query_exists (dest_dir, NULL)) {
+        g_file_make_directory_with_parents(dest_dir, NULL, NULL);
+    }
+
+    while ((info = g_file_enumerator_next_file (children, NULL, &error)) != NULL) {
+        type = g_file_info_get_file_type (info);
+        src_child = g_file_get_child (src_dir, g_file_info_get_name (info));
+        dest_child = g_file_get_child (dest_dir, g_file_info_get_name (info));
+        if (type == G_FILE_TYPE_REGULAR) {
+            if (g_file_move (src_child, dest_child, G_FILE_COPY_NONE,
+                             NULL, NULL, NULL, NULL) == FALSE) {
+                // error
+            }
+        }
+        else if (type == G_FILE_TYPE_DIRECTORY) {
+            recursively_move_dir (src_child, dest_child);
+            g_file_delete (src_child, NULL, NULL);
+        }
+        g_object_unref (dest_child);
+        g_object_unref (src_child);
+    }
+    if (error != NULL) {
+        // error
+        g_error_free (error);
+    }
+
+    g_object_unref (info);
+    g_object_unref (children);
+}
+
+static void
 process_encrypt_folder (GtkDialog *dialog,
 			gint response,
 			NautilusFile *folder)
 {
 	if (response == GTK_RESPONSE_OK) {
+        gchar *tmp_dir;
+        int exit_code;
+
+        tmp_dir = g_dir_make_tmp ("encrypt-tmp-XXXXXX", NULL);
+        if ( tmp_dir == NULL ) {
+            // error
+        }
+
+        // Get encrypted name for selected directory.
+        char *parent_name = g_file_get_path (nautilus_file_get_parent_location (folder));
+        char *folder_name = nautilus_file_get_name (folder);
+        char enc_dir[strlen (parent_name) + strlen (folder_name) + 7];
+        sprintf (enc_dir, "%s/.%s-enc", parent_name, folder_name);
+
+        // Mount to tmp to do copying
+        if (g_mkdir_with_parents (enc_dir, 0700) < 0) {
+            // error
+        }
+        gchar *args[] = {"encfs", enc_dir, tmp_dir,
+                         "--standard", "--extpass=/usr/bin/ssh-askpass", NULL};
+        if (g_spawn_sync (NULL, args, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
+                          NULL, NULL, &exit_code, NULL) == FALSE) {
+            // error
+        }
+        if (exit_code != 0) {
+            // error
+        }
+
+
+        // Copy files to mounted directory.
+
+        GFile *src_dir, *dest_dir;
+
+        src_dir = nautilus_file_get_location (folder);
+        dest_dir = g_file_new_for_path (tmp_dir);
+
+        recursively_move_dir (src_dir, dest_dir);
+
+        g_object_unref (dest_dir);
+        g_object_unref (src_dir);
+
+
+        // Unmount from tmp
+        gchar *args2[] = {"fusermount", "-uz", tmp_dir, NULL};
+        g_spawn_sync (NULL, args2, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
+                      NULL, NULL, NULL, NULL);
+
+
+        g_free (tmp_dir);
 	}
 }
 
