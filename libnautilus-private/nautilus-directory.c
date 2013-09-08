@@ -601,6 +601,30 @@ nautilus_directory_is_in_trash (NautilusDirectory *directory)
 }
 
 gboolean
+nautilus_directory_is_in_encrypted (NautilusDirectory *directory)
+{
+	// Get encrypted name for selected directory.
+	GFile *file = nautilus_directory_get_location(directory);
+	char *parent_name = g_file_get_path (g_file_get_parent (file));
+	char *folder_name = g_file_get_basename (file);
+	char enc_dir[strlen (parent_name) + strlen (folder_name) + 7];
+	sprintf (enc_dir, "%s/.%s-enc", parent_name, folder_name);
+	GFile *check_dir = g_file_new_for_path (enc_dir);
+	gboolean ret = FALSE;
+
+	if (g_file_query_exists(check_dir, NULL)) {
+		ret = TRUE;
+	}
+
+	g_object_unref (check_dir);
+	g_object_unref (file);
+	g_free (folder_name);
+	g_free (parent_name);
+
+	return ret;
+}
+
+gboolean
 nautilus_directory_is_in_recent (NautilusDirectory *directory)
 {
 	g_assert (NAUTILUS_IS_DIRECTORY (directory));

@@ -216,6 +216,7 @@ gboolean           nautilus_directory_are_all_files_seen       (NautilusDirector
 gboolean           nautilus_directory_is_local                 (NautilusDirectory         *directory);
 
 gboolean           nautilus_directory_is_in_trash              (NautilusDirectory         *directory);
+gboolean           nautilus_directory_is_in_encrypted          (NautilusDirectory         *directory);
 gboolean           nautilus_directory_is_in_recent             (NautilusDirectory         *directory);
 gboolean           nautilus_directory_is_in_network            (NautilusDirectory         *directory);
 

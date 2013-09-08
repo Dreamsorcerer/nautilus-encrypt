@@ -191,6 +191,8 @@ nautilus_SOURCES = \
 	nautilus-toolbar.h			\
 	nautilus-trash-bar.c			\
 	nautilus-trash-bar.h			\
+	nautilus-encrypt-bar.c			\
+	nautilus-encrypt-bar.h			\
 	nautilus-view.c				\
 	nautilus-view.h				\
 	nautilus-view-dnd.c			\

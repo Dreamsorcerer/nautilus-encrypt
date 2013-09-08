@@ -35,6 +35,7 @@
 #include "nautilus-special-location-bar.h"
 #include "nautilus-toolbar.h"
 #include "nautilus-trash-bar.h"
+#include "nautilus-encrypt-bar.h"
 #include "nautilus-view-factory.h"
 #include "nautilus-window-private.h"
 #include "nautilus-x-content-bar.h"
@@ -2078,6 +2079,17 @@ nautilus_window_slot_show_trash_bar (NautilusWindowSlot *slot)
 }
 
 static void
+nautilus_window_slot_show_encrypt_bar (NautilusWindowSlot *slot)
+{
+	GtkWidget *bar;
+
+	bar = nautilus_encrypt_bar_new (slot);
+	gtk_widget_show (bar);
+
+	nautilus_window_slot_add_extra_location_widget (slot, bar);
+}
+
+static void
 nautilus_window_slot_show_special_location_bar (NautilusWindowSlot     *slot,
 						NautilusSpecialLocation special_location)
 {
@@ -2124,6 +2136,8 @@ nautilus_window_slot_update_for_new_location (NautilusWindowSlot *slot)
 	NautilusDirectory *directory;
 	gboolean location_really_changed;
 	FindMountData *data;
+	GFileInfo *type;
+	gboolean is_mountpoint;
 
 	window = nautilus_window_slot_get_window (slot);
 	new_location = slot->details->pending_location;
@@ -2161,13 +2175,23 @@ nautilus_window_slot_update_for_new_location (NautilusWindowSlot *slot)
 		nautilus_window_load_extension_menus (window);
 	}
 
-	if (location_really_changed) {
+	/* Check if mountpoint,
+	 * so encrypt-bar can be removed after mounting encrypted dir.
+	 */
+	type = g_file_query_info (new_location,
+				  G_FILE_ATTRIBUTE_UNIX_IS_MOUNTPOINT,
+				  G_FILE_QUERY_INFO_NONE, NULL, NULL);
+	is_mountpoint = g_file_info_get_attribute_boolean (type, G_FILE_ATTRIBUTE_UNIX_IS_MOUNTPOINT);
+
+	if (location_really_changed || is_mountpoint) {
 		nautilus_window_slot_remove_extra_location_widgets (slot);
 
 		directory = nautilus_directory_get (new_location);
 
 		if (nautilus_directory_is_in_trash (directory)) {
 			nautilus_window_slot_show_trash_bar (slot);
+		} else if (!is_mountpoint && nautilus_directory_is_in_encrypted (directory)) {
+			nautilus_window_slot_show_encrypt_bar (slot);
 		} else {
 			GFile *scripts_file;
 			char *scripts_path = nautilus_get_scripts_directory_path ();
