@@ -95,6 +95,8 @@ libnautilus_private_la_SOURCES = \
 	nautilus-directory.h \
 	nautilus-dnd.c \
 	nautilus-dnd.h \
+	nautilus-encrypt-secret.c \
+	nautilus-encrypt-secret.h \
 	nautilus-entry.c \
 	nautilus-entry.h \
 	nautilus-file-attributes.h \

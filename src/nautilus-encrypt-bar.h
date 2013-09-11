@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2006 Paolo Borelli <pborelli@katamail.com>
+ * Copyright (C) 2013 Sam Bull <sam.hacking@sent.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * Authors: Paolo Borelli <pborelli@katamail.com>
+ * Authors: Sam Bull <sam.hacking@sentc.com>
  *
  */
 

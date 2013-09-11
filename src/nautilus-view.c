@@ -65,6 +65,7 @@
 #include <libnautilus-private/nautilus-search-directory.h>
 #include <libnautilus-private/nautilus-directory.h>
 #include <libnautilus-private/nautilus-dnd.h>
+#include <libnautilus-private/nautilus-encrypt-secret.h>
 #include <libnautilus-private/nautilus-file-attributes.h>
 #include <libnautilus-private/nautilus-file-changes-queue.h>
 #include <libnautilus-private/nautilus-file-dnd.h>
@@ -2193,6 +2194,20 @@ recursively_move_dir (GFile *src_dir, GFile *dest_dir)
 }
 
 static void
+on_password_stored (GObject *source,
+		    GAsyncResult *result,
+		    gpointer unused)
+{
+	GError *error = NULL;
+
+	secret_password_store_finish (result, &error);
+	if (error != NULL) {
+		// error
+		g_error_free (error);
+	}
+}
+
+static void
 process_encrypt_folder (GtkDialog *dialog,
 			gint response,
 			NautilusFile *folder)
@@ -2200,6 +2215,16 @@ process_encrypt_folder (GtkDialog *dialog,
 	if (response == GTK_RESPONSE_OK) {
 		gchar *tmp_dir;
 		int exit_code;
+		char *mount_dir;
+		gchar *password;
+
+		mount_dir = g_file_get_path (nautilus_file_get_location (folder));
+
+		gchar *args3[] = {"/usr/bin/ssh-askpass", NULL};
+		g_spawn_sync (NULL, args3, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
+			      &password, NULL, NULL, NULL);
+		char *c = strchr (password, '\n');
+		*c = '\0';
 
 		tmp_dir = g_dir_make_tmp ("encrypt-tmp-XXXXXX", NULL);
 		if ( tmp_dir == NULL ) {
@@ -2216,8 +2241,10 @@ process_encrypt_folder (GtkDialog *dialog,
 		if (g_mkdir_with_parents (enc_dir, 0700) < 0) {
 			// error
 		}
+		char psw_cmd[strlen (password) + 18];
+		sprintf (psw_cmd, "--extpass=echo \"%s\"", password);
 		gchar *args[] = {"encfs", enc_dir, tmp_dir,
-				 "--standard", "--extpass=/usr/bin/ssh-askpass", NULL};
+				 "--standard", psw_cmd, NULL};
 		if (g_spawn_sync (NULL, args, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
 				  NULL, NULL, &exit_code, NULL) == FALSE) {
 			// error
@@ -2240,12 +2267,22 @@ process_encrypt_folder (GtkDialog *dialog,
 		g_object_unref (src_dir);
 
 
+		// Add password to keyring
+		secret_password_store (ENCRYPTION_SCHEMA, SECRET_COLLECTION_DEFAULT, "Protected folder",
+				       password, NULL, on_password_stored, NULL,
+				       "encfs-key", "abcde",
+				       "location", mount_dir,
+				       NULL);
+
+
 		// Unmount from tmp
 		gchar *args2[] = {"fusermount", "-uz", tmp_dir, NULL};
 		g_spawn_sync (NULL, args2, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
 			      NULL, NULL, NULL, NULL);
 
 
+		g_free (password);
+		g_free (mount_dir);
 		g_free (tmp_dir);
 	}
 }

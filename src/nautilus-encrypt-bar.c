@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
- * Copyright (C) 2006 Paolo Borelli <pborelli@katamail.com>
+ * Copyright (C) 2013 Sam Bull <sam.hacking@sent.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * Authors: Paolo Borelli <pborelli@katamail.com>
+ * Authors: Sam Bull <sam.hacking@sentc.com>
  *
  */
 
@@ -27,6 +28,7 @@
 
 #include "nautilus-encrypt-bar.h"
 
+#include "libnautilus-private/nautilus-encrypt-secret.h"
 #include "nautilus-view.h"
 
 #define NAUTILUS_ENCRYPT_BAR_GET_PRIVATE(o)\
@@ -53,9 +55,9 @@ G_DEFINE_TYPE (NautilusEncryptBar, nautilus_encrypt_bar, GTK_TYPE_INFO_BAR);
 
 static void
 nautilus_encrypt_bar_set_property (GObject      *object,
-				 guint         prop_id,
-				 const GValue *value,
-				 GParamSpec   *pspec)
+				   guint         prop_id,
+				   const GValue *value,
+				   GParamSpec   *pspec)
 {
 	NautilusEncryptBar *bar;
 
@@ -124,11 +126,12 @@ nautilus_encrypt_bar_class_init (NautilusEncryptBarClass *klass)
 
 static void
 encrypt_bar_response_cb (GtkInfoBar *infobar,
-		       gint response_id,
-		       gpointer user_data)
+		         gint response_id,
+		         gpointer user_data)
 {
 	NautilusEncryptBar *bar;
 	NautilusFile *dir;
+	GError *error = NULL;
 	gchar *this_dir;
 	int exit_code;
 
@@ -144,14 +147,29 @@ encrypt_bar_response_cb (GtkInfoBar *infobar,
 		char enc_dir[strlen (parent_name) + strlen (dir_name) + 7];
 		sprintf (enc_dir, "%s/.%s-enc", parent_name, dir_name);
 
-		gchar *args[] = {"encfs", enc_dir, this_dir,
-				 "--standard", "--extpass=/usr/bin/ssh-askpass", NULL};
-		if (g_spawn_sync (NULL, args, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
-				  NULL, NULL, &exit_code, NULL) == FALSE) {
+		gchar *password = secret_password_lookup_sync (ENCRYPTION_SCHEMA, NULL, &error,
+							       "location", this_dir,
+							       NULL);
+
+		if (error != NULL) {
 			// error
-		}
-		if (exit_code != 0) {
+			g_error_free (error);
+		} else if (password == NULL) {
 			// error
+		} else {
+			char psw_cmd[strlen (password) + 18];
+			sprintf (psw_cmd, "--extpass=echo \"%s\"", password);
+			gchar *args[] = {"encfs", enc_dir, this_dir,
+					 "--standard", psw_cmd, NULL};
+			if (g_spawn_sync (NULL, args, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
+					  NULL, NULL, &exit_code, NULL) == FALSE) {
+				// error
+			}
+			if (exit_code != 0) {
+				// error
+			}
+
+			secret_password_free (password);
 		}
 
 		g_free (this_dir);

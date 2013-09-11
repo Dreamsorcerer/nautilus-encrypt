@@ -279,6 +279,7 @@ PKG_CHECK_MODULES(NAUTILUS, [
 	gio-unix-2.0 >= glib_minver
 	gsettings-desktop-schemas >= schemas_minver
 	libnotify >= notify_minver
+	libsecret-1 >= 0.15
 ])
 
 dnl Multimedia keys
